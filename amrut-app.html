@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercise AMRUT</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d1b2a;
+      --navy2: #162032;
+      --navy3: #1e2f45;
+      --blue: #1a3a5c;
+      --gold: #c9a83c;
+      --gold-light: #e8c547;
+      --green: #2d6a4f;
+      --green-light: #52b788;
+      --red: #c1121f;
+      --red-light: #e63946;
+      --text: #dde4ee;
+      --text-dim: #8da0b8;
+      --border: #2a3f57;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── UTILITY ─────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: block; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .gap-16 { gap: 16px; }
+    .w-full { width: 100%; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 12px; }
+    .text-gold { color: var(--gold); }
+    .text-dim { color: var(--text-dim); }
+    .text-green { color: var(--green-light); }
+    .text-red { color: var(--red-light); }
+    .bold { font-weight: 600; }
+    .mt-4 { margin-top: 4px; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mb-8 { margin-bottom: 8px; }
+    .p-8 { padding: 8px; }
+    .p-12 { padding: 12px; }
+    .p-16 { padding: 16px; }
+    .rounded { border-radius: 6px; }
+    .rounded-lg { border-radius: 10px; }
+
+    /* ── COMPONENTS ──────────────────────────────────────── */
+    .card {
+      background: var(--navy2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .badge-gold { background: rgba(201,168,60,0.2); color: var(--gold); border: 1px solid rgba(201,168,60,0.4); }
+    .badge-green { background: rgba(45,106,79,0.3); color: var(--green-light); border: 1px solid rgba(82,183,136,0.4); }
+    .badge-red { background: rgba(193,18,31,0.2); color: var(--red-light); border: 1px solid rgba(230,57,70,0.4); }
+    .badge-blue { background: rgba(26,58,92,0.5); color: #7eb8e8; border: 1px solid rgba(126,184,232,0.3); }
+    .badge-gray { background: rgba(141,160,184,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--gold); color: #0d1b2a; }
+    .btn-primary:hover:not(:disabled) { background: var(--gold-light); }
+    .btn-secondary { background: var(--navy3); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: var(--red-light); }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover:not(:disabled) { background: var(--green-light); color: #0d1b2a; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-full { width: 100%; }
+
+    .input, select, textarea {
+      width: 100%;
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+    select option { background: var(--navy2); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    /* ── TOAST ───────────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      max-width: 320px;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .toast-success { background: #1a3a2a; border: 1px solid var(--green-light); color: var(--green-light); }
+    .toast-error { background: #2a1015; border: 1px solid var(--red-light); color: var(--red-light); }
+    .toast-info { background: #1a2a3a; border: 1px solid var(--gold); color: var(--gold); }
+    @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── TOP BAR ─────────────────────────────────────────── */
+    .topbar {
+      background: var(--navy2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar-brand .emblem {
+      width: 36px;
+      height: 36px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--navy);
+    }
+    .topbar-brand .brand-text {
+      line-height: 1.2;
+    }
+    .topbar-brand .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 1px;
+    }
+    .topbar-brand .brand-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar-user {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* ── STATUS BAR ──────────────────────────────────────── */
+    .status-bar {
+      background: var(--blue);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .status-label { color: var(--text-dim); }
+    .status-value { color: var(--text); font-weight: 600; }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green-light);
+      animation: pulse 2s infinite;
+    }
+    .status-dot.inactive { background: var(--text-dim); animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── TIMER ───────────────────────────────────────────── */
+    .timer-display {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--gold);
+      letter-spacing: 2px;
+    }
+    .timer-display.warning { color: var(--red-light); }
+
+    /* ── TABS ────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--navy2);
+      padding: 0 24px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-panel { display: none; padding: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ── CONTENT CONTAINER ───────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* ── GRID ────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* ── LOGIN SCREEN ────────────────────────────────────── */
+    #screen-login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 30% 40%, rgba(26,58,92,0.4) 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 80%, rgba(201,168,60,0.1) 0%, transparent 50%),
+                  var(--navy);
+    }
+    .login-box {
+      width: 400px;
+      max-width: calc(100vw - 40px);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-emblem {
+      width: 72px; height: 72px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--navy);
+      margin: 0 auto 16px;
+      box-shadow: 0 0 30px rgba(201,168,60,0.3);
+    }
+    .login-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 3px;
+    }
+    .login-subtitle {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+    .role-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .role-btn {
+      padding: 14px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--navy3);
+      color: var(--text-dim);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .role-btn:hover { border-color: var(--gold); color: var(--text); }
+    .role-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,60,0.08); }
+    .role-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+
+    /* ── ANNOUNCEMENT FEED ───────────────────────────────── */
+    .feed-item {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      animation: fadeIn 0.4s ease;
+    }
+    .feed-item.type-crisis { border-left: 3px solid var(--red-light); }
+    .feed-item.type-situation { border-left: 3px solid var(--gold); }
+    .feed-item.type-announcement { border-left: 3px solid #7eb8e8; }
+    .feed-item.type-query-response { border-left: 3px solid var(--green-light); }
+    .feed-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .feed-time { font-size: 11px; color: var(--text-dim); margin-left: auto; }
+    .feed-body { font-size: 13px; line-height: 1.5; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── ATTENDANCE GRID ─────────────────────────────────── */
+    .sqn-card {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .sqn-card:hover { border-color: var(--gold); }
+    .sqn-name { font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sqn-count { font-size: 28px; font-weight: 800; color: var(--gold); margin: 6px 0 4px; }
+    .sqn-total { font-size: 11px; color: var(--text-dim); }
+    .sqn-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .sqn-bar-fill { height: 100%; background: var(--green-light); border-radius: 2px; transition: width 0.5s ease; }
+
+    /* ── QUERY LIST ──────────────────────────────────────── */
+    .query-item {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .query-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .query-text { font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
+    .query-response { background: rgba(45,106,79,0.15); border: 1px solid rgba(82,183,136,0.3); border-radius: 6px; padding: 10px; font-size: 13px; color: var(--green-light); }
+    .query-response-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); margin-bottom: 4px; }
+
+    /* ── DIVIDER ─────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* ── SECTION TITLE ───────────────────────────────────── */
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    /* ── SCROLLABLE ──────────────────────────────────────── */
+    .scrollable { overflow-y: auto; }
+
+    /* ── SQN HEADER CARD ─────────────────────────────────── */
+    .sqn-header-card {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--navy2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sqn-header-name { font-size: 22px; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .sqn-header-member { font-size: 13px; color: var(--text-dim); }
+
+    /* ── EMPTY STATE ─────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+
+    /* ── SITUATION PANEL ─────────────────────────────────── */
+    .situation-display {
+      background: rgba(201,168,60,0.05);
+      border: 1px solid rgba(201,168,60,0.2);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .situation-phase { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 6px; }
+    .situation-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+    .situation-body { font-size: 13px; line-height: 1.7; color: var(--text-dim); }
+    .requirements-list { margin-top: 14px; }
+    .req-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .req-bullet { color: var(--gold); flex-shrink: 0; }
+
+    /* ── ATTENDANCE SELF-MARK ────────────────────────────── */
+    .att-card {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .att-status-present { color: var(--green-light); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .container { padding: 14px; }
+      .tab { padding: 10px 12px; font-size: 12px; }
+      .timer-display { font-size: 22px; }
+      .topbar { padding: 0 14px; }
+      .tabs { padding: 0 14px; }
+    }
+
+    /* ── CONFIG SCREEN ───────────────────────────────────── */
+    .config-notice {
+      background: rgba(201,168,60,0.08);
+      border: 1px solid rgba(201,168,60,0.3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .config-notice h3 { color: var(--gold); margin-bottom: 8px; font-size: 14px; }
+    .config-notice p { color: var(--text-dim); font-size: 13px; line-height: 1.6; }
+    code {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--gold);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-emblem">⚔</div>
+      <div class="login-title">EXERCISE AMRUT</div>
+      <div class="login-subtitle">Crisis Simulation — Defence & Foreign Affairs</div>
+    </div>
+
+    <div class="card">
+      <!-- Role selection -->
+      <div class="form-group">
+        <label>I am logging in as</label>
+        <div class="role-toggle">
+          <div class="role-btn active" id="role-btn-member" onclick="selectRole('member')">
+            <span class="role-icon">🎖️</span>
+            Squadron Member
+          </div>
+          <div class="role-btn" id="role-btn-control" onclick="selectRole('control')">
+            <span class="role-icon">🎯</span>
+            Control
+          </div>
+        </div>
+      </div>
+
+      <!-- Member fields -->
+      <div id="member-fields">
+        <div class="form-group">
+          <label>Your Squadron</label>
+          <select id="login-squadron">
+            <option value="">— Select your squadron —</option>
+            <option value="SQN01">Alpha</option>
+            <option value="SQN02">Bravo</option>
+            <option value="SQN03">Charlie</option>
+            <option value="SQN04">Delta</option>
+            <option value="SQN05">Echo</option>
+            <option value="SQN06">Foxtrot</option>
+            <option value="SQN07">Golf</option>
+            <option value="SQN08">Hunter</option>
+            <option value="SQN09">India</option>
+            <option value="SQN10">Juliet</option>
+            <option value="SQN11">Kilo</option>
+            <option value="SQN12">Lima</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Your Name</label>
+          <select id="login-member-name" disabled>
+            <option value="">— Select squadron first —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Control fields -->
+      <div id="control-fields" class="hidden">
+        <div class="form-group">
+          <label>Control Password</label>
+          <input type="password" class="input" id="login-password" placeholder="Enter control password" onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="doLogin()" id="login-btn">Enter Exercise</button>
+      <div id="login-error" class="mt-8 text-center text-red text-sm hidden"></div>
+    </div>
+
+    <div class="text-center mt-8 text-sm text-dim">
+      Exercise AMRUT · Defence &amp; Foreign Affairs Programme
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     CONTROL SCREEN
+═══════════════════════════════════════════════════════ -->
+<div id="screen-control" class="screen">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="emblem">⚔</div>
+      <div class="brand-text">
+        <div class="brand-title">EXERCISE AMRUT</div>
+        <div class="brand-sub">Control Panel</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-user" id="ctrl-user-info"></div>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Exercise status bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-dot" id="ctrl-status-dot"></div>
+      <span class="status-value" id="ctrl-status-text">Standby</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Crisis:</span>
+      <span class="status-value" id="ctrl-phase-text">—</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Time Remaining:</span>
+      <span class="timer-display" id="ctrl-timer">—:——</span>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:8px;">
+      <button class="btn btn-sm btn-green" onclick="openTimerModal()">⏱ Set Timer</button>
+      <button class="btn btn-sm btn-danger" id="ctrl-timer-clear" onclick="clearTimer()" style="display:none;">Stop Timer</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this, 'ctrl-situation')">📋 Situation</div>
+    <div class="tab" onclick="switchTab(this, 'ctrl-broadcast')">📢 Broadcast</div>
+    <div class="tab" onclick="switchTab(this, 'ctrl-attendance')">✅ Attendance</div>
+    <div class="tab" onclick="switchTab(this, 'ctrl-queries')">❓ Queries <span class="badge badge-red" id="ctrl-query-badge" style="display:none;"></span></div>
+    <div class="tab" onclick="switchTab(this, 'ctrl-roster')">👥 Roster</div>
+  </div>
+
+  <!-- TAB: Situation -->
+  <div class="tab-panel active" id="ctrl-situation">
+    <div style="max-width:800px; margin:0 auto;">
+      <div class="section-title">Current Crisis Situation</div>
+      <div class="situation-display" id="ctrl-current-situation">
+        <div class="empty-state"><div class="empty-icon">📋</div>No situation posted yet</div>
+      </div>
+      <div class="card">
+        <div class="section-title">Post / Update Situation</div>
+        <div class="form-group">
+          <label>Crisis Number</label>
+          <select id="ctrl-crisis-num" class="input">
+            <option value="1">Crisis 1</option>
+            <option value="2">Crisis 2</option>
+            <option value="3">Crisis 3</option>
+            <option value="4">Crisis 4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Situation Title</label>
+          <input type="text" class="input" id="ctrl-sit-title" placeholder="e.g., Indo-Pacific Maritime Dispute">
+        </div>
+        <div class="form-group">
+          <label>Situation Description</label>
+          <textarea id="ctrl-sit-body" rows="5" placeholder="Describe the crisis situation in detail…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Squadron Requirements (one per line)</label>
+          <textarea id="ctrl-sit-reqs" rows="4" placeholder="e.g., Identify the key stakeholders&#10;Recommend a diplomatic response&#10;Outline an economic strategy"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Exercise Status</label>
+          <select id="ctrl-ex-status" class="input">
+            <option value="active">Active — Squadrons Working</option>
+            <option value="briefing">Briefing in Progress</option>
+            <option value="submission">Submission Phase</option>
+            <option value="break">Break</option>
+            <option value="complete">Exercise Complete</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="postSituation()">📤 Publish Situation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Broadcast -->
+  <div class="tab-panel" id="ctrl-broadcast">
+    <div class="grid-2" style="max-width:900px; margin:0 auto; align-items:start;">
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="section-title">Send Announcement</div>
+          <div class="form-group">
+            <label>Target</label>
+            <select id="ctrl-ann-target" class="input">
+              <option value="all">📣 All Squadrons</option>
+              <option value="SQN01">Alpha</option>
+              <option value="SQN02">Bravo</option>
+              <option value="SQN03">Charlie</option>
+              <option value="SQN04">Delta</option>
+              <option value="SQN05">Echo</option>
+              <option value="SQN06">Foxtrot</option>
+              <option value="SQN07">Golf</option>
+              <option value="SQN08">Hunter</option>
+              <option value="SQN09">India</option>
+              <option value="SQN10">Juliet</option>
+              <option value="SQN11">Kilo</option>
+              <option value="SQN12">Lima</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea id="ctrl-ann-msg" rows="4" placeholder="Type your announcement…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="sendAnnouncement()">📢 Send Announcement</button>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">Recent Announcements</div>
+        <div id="ctrl-ann-feed">
+          <div class="empty-state"><div class="empty-icon">📢</div>No announcements yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Attendance -->
+  <div class="tab-panel" id="ctrl-attendance">
+    <div style="max-width:960px; margin:0 auto;">
+      <div class="flex items-center justify-between mb-8" style="flex-wrap:wrap; gap:12px;">
+        <div>
+          <div class="section-title" style="margin-bottom:2px;">Live Attendance</div>
+          <div class="text-dim text-sm">Total Present: <span id="ctrl-att-total" class="text-green bold">0</span> / <span id="ctrl-att-grand-total">0</span></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="refreshAttendance()">↺ Refresh</button>
+      </div>
+      <div class="grid-4" id="ctrl-att-grid">
+        <!-- Filled by JS -->
+      </div>
+      <hr class="divider">
+      <div class="section-title">Attendance Details</div>
+      <div class="form-group" style="max-width:200px;">
+        <label>View Squadron</label>
+        <select id="ctrl-att-detail-sqn" class="input" onchange="loadAttendanceDetail()">
+          <option value="">— Select —</option>
+          <option value="SQN01">Alpha</option>
+          <option value="SQN02">Bravo</option>
+          <option value="SQN03">Charlie</option>
+          <option value="SQN04">Delta</option>
+          <option value="SQN05">Echo</option>
+          <option value="SQN06">Foxtrot</option>
+          <option value="SQN07">Golf</option>
+          <option value="SQN08">Hunter</option>
+          <option value="SQN09">India</option>
+          <option value="SQN10">Juliet</option>
+          <option value="SQN11">Kilo</option>
+          <option value="SQN12">Lima</option>
+        </select>
+      </div>
+      <div id="ctrl-att-detail-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Queries -->
+  <div class="tab-panel" id="ctrl-queries">
+    <div style="max-width:800px; margin:0 auto;">
+      <div class="flex items-center justify-between mb-8" style="flex-wrap:wrap; gap:12px;">
+        <div class="section-title" style="margin-bottom:0;">Squadron Queries</div>
+        <div class="flex gap-8">
+          <button class="btn btn-sm btn-secondary" onclick="filterQueries('pending')" id="qf-pending">Pending</button>
+          <button class="btn btn-sm btn-secondary" onclick="filterQueries('all')" id="qf-all">All</button>
+        </div>
+      </div>
+      <div id="ctrl-queries-list">
+        <div class="empty-state"><div class="empty-icon">❓</div>No queries received</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Roster -->
+  <div class="tab-panel" id="ctrl-roster">
+    <div style="max-width:800px; margin:0 auto;">
+      <div class="config-notice">
+        <h3>📂 Roster Import</h3>
+        <p>Upload a CSV file with columns: <code>Name</code>, <code>Rank</code>, <code>Service</code>, <code>Squadron</code> (1–12).<br>
+        This replaces the existing roster. All existing attendance and login data is preserved.</p>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="section-title">Upload Roster CSV</div>
+        <div class="form-group">
+          <label>CSV File</label>
+          <input type="file" id="roster-file" accept=".csv" class="input" onchange="previewRoster()">
+        </div>
+        <div id="roster-preview" class="hidden">
+          <div class="text-sm text-dim mb-8" id="roster-preview-count"></div>
+          <button class="btn btn-primary" onclick="uploadRoster()">📤 Upload Roster</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between mb-8">
+          <div class="section-title" style="margin-bottom:0;">Current Roster</div>
+          <div class="form-group" style="margin:0; min-width:160px;">
+            <select id="roster-view-sqn" class="input" onchange="loadRosterView()">
+              <option value="all">All Squadrons</option>
+              <option value="SQN01">Alpha</option>
+              <option value="SQN02">Bravo</option>
+              <option value="SQN03">Charlie</option>
+              <option value="SQN04">Delta</option>
+              <option value="SQN05">Echo</option>
+              <option value="SQN06">Foxtrot</option>
+              <option value="SQN07">Golf</option>
+              <option value="SQN08">Hunter</option>
+              <option value="SQN09">India</option>
+              <option value="SQN10">Juliet</option>
+              <option value="SQN11">Kilo</option>
+              <option value="SQN12">Lima</option>
+            </select>
+          </div>
+        </div>
+        <div id="roster-list"><div class="empty-state"><div class="empty-icon">👥</div>No roster loaded</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SQUADRON MEMBER SCREEN
+═══════════════════════════════════════════════════════ -->
+<div id="screen-squadron" class="screen">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="emblem">⚔</div>
+      <div class="brand-text">
+        <div class="brand-title">EXERCISE AMRUT</div>
+        <div class="brand-sub" id="sqn-topbar-sub">Squadron Portal</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="timer-display" id="sqn-timer" style="font-size:18px;">—:——</div>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-dot" id="sqn-status-dot"></div>
+      <span class="status-value" id="sqn-status-text">Standby</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Crisis:</span>
+      <span class="status-value" id="sqn-phase-text">—</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Squadron header card -->
+    <div class="sqn-header-card">
+      <div>
+        <div class="sqn-header-name" id="sqn-header-name">—</div>
+        <div class="sqn-header-member" id="sqn-header-member">—</div>
+      </div>
+      <div id="sqn-att-status-display"></div>
+    </div>
+
+    <div class="grid-2" style="align-items:start; gap:20px;">
+      <!-- Left column: Live feed -->
+      <div>
+        <div class="section-title">Live Updates from Control</div>
+        <div id="sqn-feed">
+          <div class="empty-state"><div class="empty-icon">📡</div>Awaiting updates from Control…</div>
+        </div>
+      </div>
+
+      <!-- Right column: Attendance + Queries -->
+      <div>
+        <!-- Attendance -->
+        <div class="section-title">Attendance</div>
+        <div class="att-card card mb-8" style="margin-bottom:16px;">
+          <div>
+            <div class="bold" id="sqn-att-name">—</div>
+            <div class="text-sm text-dim mt-4">Mark your attendance for this exercise</div>
+          </div>
+          <div id="sqn-att-btn-area">
+            <button class="btn btn-green" onclick="markAttendance()" id="sqn-att-btn">✓ Mark Present</button>
+          </div>
+        </div>
+
+        <!-- Ask Control -->
+        <div class="section-title">Ask Control</div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label>Your Question</label>
+            <textarea id="sqn-query-text" rows="3" placeholder="Type your question for Control…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitQuery()">📨 Send to Control</button>
+        </div>
+
+        <!-- My Queries -->
+        <div class="section-title">My Squadron's Queries</div>
+        <div id="sqn-my-queries">
+          <div class="empty-state" style="padding:20px;"><div class="empty-icon" style="font-size:28px;">❓</div>No queries sent yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TIMER MODAL
+═══════════════════════════════════════════════════════ -->
+<div id="timer-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center;">
+  <div class="card" style="width:340px; max-width:90vw;">
+    <div class="section-title">Set Countdown Timer</div>
+    <div class="form-group">
+      <label>Duration</label>
+      <div class="flex gap-8">
+        <div style="flex:1;">
+          <input type="number" class="input" id="timer-hours" min="0" max="5" value="2" placeholder="Hours">
+          <div class="text-sm text-dim mt-4 text-center">Hours</div>
+        </div>
+        <div style="flex:1;">
+          <input type="number" class="input" id="timer-mins" min="0" max="59" value="30" placeholder="Minutes">
+          <div class="text-sm text-dim mt-4 text-center">Minutes</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" style="flex:1;" onclick="setTimer()">Start Timer</button>
+      <button class="btn btn-secondary" onclick="closeTimerModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+
+// ════════════════════════════════════════════════
+// CONFIGURATION — Fill in your Firebase details
+// ════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDAjHSn8cPyvDWPr1mBWSyroPMnKFTKZ8w",
+  authDomain:        "exercise-amrut.firebaseapp.com",
+  projectId:         "exercise-amrut",
+  storageBucket:     "exercise-amrut.firebasestorage.app",
+  messagingSenderId: "115385481335",
+  appId:             "1:115385481335:web:6bad02f07869ec73066e72"
+};
+
+// Change this password before running the exercise
+const CONTROL_PASSWORD = "AMRUT@Control2024";
+
+// ════════════════════════════════════════════════
+// FIREBASE INIT
+// ════════════════════════════════════════════════
+let db;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+} catch(e) {
+  console.error("Firebase init failed:", e);
+}
+
+// ════════════════════════════════════════════════
+// APP STATE
+// ════════════════════════════════════════════════
+const app = {
+  user: null,         // { name, rank, service, squadronId, role }
+  role: null,         // "control" | "member"
+  listeners: [],      // Firestore unsubscribe fns
+  queryFilter: 'pending',
+  timerInterval: null,
+  rosterPreview: [],
+  attendanceData: {}  // { sqnId: { present: N, total: N } }
+};
+
+// ════════════════════════════════════════════════
+// UTILITY
+// ════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(el, panelId) {
+  const parentTabs = el.closest('.tabs');
+  parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const panelsParent = parentTabs.nextElementSibling.parentElement;
+  panelsParent.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDateTime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+const SQN_NAMES = {
+  SQN01: 'Alpha',   SQN02: 'Bravo',   SQN03: 'Charlie',
+  SQN04: 'Delta',   SQN05: 'Echo',    SQN06: 'Foxtrot',
+  SQN07: 'Golf',    SQN08: 'Hunter',  SQN09: 'India',
+  SQN10: 'Juliet',  SQN11: 'Kilo',    SQN12: 'Lima'
+};
+function sqnLabel(id) {
+  return id ? (SQN_NAMES[id] || id) : '—';
+}
+
+function clearListeners() {
+  app.listeners.forEach(fn => fn());
+  app.listeners = [];
+}
+
+// ════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════
+function selectRole(role) {
+  document.getElementById('role-btn-member').classList.toggle('active', role === 'member');
+  document.getElementById('role-btn-control').classList.toggle('active', role === 'control');
+  document.getElementById('member-fields').classList.toggle('hidden', role !== 'member');
+  document.getElementById('control-fields').classList.toggle('hidden', role !== 'control');
+}
+
+// Populate member name dropdown when squadron is chosen
+document.getElementById('login-squadron').addEventListener('change', async function() {
+  const sqnId = this.value;
+  const nameSelect = document.getElementById('login-member-name');
+  nameSelect.innerHTML = '<option value="">Loading…</option>';
+  nameSelect.disabled = true;
+  if (!sqnId) {
+    nameSelect.innerHTML = '<option value="">— Select squadron first —</option>';
+    return;
+  }
+  try {
+    const snap = await db.collection('roster').where('squadronId', '==', sqnId).orderBy('name').get();
+    if (snap.empty) {
+      nameSelect.innerHTML = '<option value="">— No roster loaded for this squadron —</option>';
+    } else {
+      nameSelect.innerHTML = '<option value="">— Select your name —</option>';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const opt = document.createElement('option');
+        opt.value = doc.id;
+        opt.textContent = `${d.rank} ${d.name}`;
+        nameSelect.appendChild(opt);
+      });
+      nameSelect.disabled = false;
+    }
+  } catch(e) {
+    nameSelect.innerHTML = '<option value="">— Error loading roster —</option>';
+    console.error(e);
+  }
+});
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const isControl = document.getElementById('role-btn-control').classList.contains('active');
+
+  try {
+    if (isControl) {
+      const pwd = document.getElementById('login-password').value.trim();
+      if (!pwd) throw new Error('Please enter the control password.');
+      if (pwd !== CONTROL_PASSWORD) throw new Error('Incorrect password.');
+      app.user = { name: 'Control', role: 'control' };
+      app.role = 'control';
+      enterControl();
+    } else {
+      const sqnId = document.getElementById('login-squadron').value;
+      const memberId = document.getElementById('login-member-name').value;
+      if (!sqnId) throw new Error('Please select your squadron.');
+      if (!memberId) throw new Error('Please select your name.');
+      const doc = await db.collection('roster').doc(memberId).get();
+      if (!doc.exists) throw new Error('Member not found. Contact Control.');
+      app.user = { id: memberId, ...doc.data() };
+      app.role = 'member';
+      enterSquadron();
+    }
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Enter Exercise';
+  }
+}
+
+function doLogout() {
+  clearListeners();
+  if (app.timerInterval) clearInterval(app.timerInterval);
+  app.user = null; app.role = null;
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-squadron').value = '';
+  document.getElementById('login-member-name').innerHTML = '<option value="">— Select squadron first —</option>';
+  document.getElementById('login-member-name').disabled = true;
+  selectRole('member');
+  showScreen('screen-login');
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — ENTER
+// ════════════════════════════════════════════════
+function enterControl() {
+  document.getElementById('ctrl-user-info').textContent = 'Control';
+  showScreen('screen-control');
+  initAttendanceGrid();
+  listenExercise_Control();
+  listenAnnouncements_Control();
+  listenQueries_Control();
+  loadRosterView();
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — EXERCISE / SITUATION
+// ════════════════════════════════════════════════
+function postSituation() {
+  const title = document.getElementById('ctrl-sit-title').value.trim();
+  const body = document.getElementById('ctrl-sit-body').value.trim();
+  const reqs = document.getElementById('ctrl-sit-reqs').value.trim().split('\n').filter(r => r.trim());
+  const phase = parseInt(document.getElementById('ctrl-crisis-num').value);
+  const status = document.getElementById('ctrl-ex-status').value;
+  if (!title || !body) { toast('Please fill in a title and description.', 'error'); return; }
+
+  const batch = db.batch();
+
+  // Update exercise state
+  batch.set(db.collection('exercise').doc('state'), {
+    currentPhase: phase,
+    status,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  // Store situation
+  batch.set(db.collection('exercise').doc('situation'), {
+    phase, title, body, requirements: reqs,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Push to feed
+  const feedRef = db.collection('feed').doc();
+  batch.set(feedRef, {
+    type: 'situation',
+    target: 'all',
+    title,
+    body,
+    requirements: reqs,
+    phase,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  batch.commit().then(() => {
+    toast('Situation published to all squadrons.', 'success');
+  }).catch(e => {
+    toast('Error: ' + e.message, 'error');
+  });
+}
+
+function listenExercise_Control() {
+  const unsub1 = db.collection('exercise').doc('state').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+    const statusMap = {
+      active: ['Active', true],
+      briefing: ['Briefing', true],
+      submission: ['Submission', true],
+      break: ['Break', false],
+      complete: ['Complete', false]
+    };
+    const [label, live] = statusMap[d.status] || ['Standby', false];
+    document.getElementById('ctrl-status-text').textContent = label;
+    document.getElementById('ctrl-status-dot').className = 'status-dot' + (live ? '' : ' inactive');
+    document.getElementById('ctrl-phase-text').textContent = d.currentPhase ? 'Crisis ' + d.currentPhase : '—';
+  });
+
+  const unsub2 = db.collection('exercise').doc('situation').onSnapshot(snap => {
+    if (!snap.exists) {
+      document.getElementById('ctrl-current-situation').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">📋</div>No situation posted yet</div>';
+      return;
+    }
+    renderSituation(snap.data(), 'ctrl-current-situation');
+  });
+
+  const unsub3 = db.collection('exercise').doc('timer').onSnapshot(snap => {
+    handleTimerSnap(snap);
+  });
+
+  app.listeners.push(unsub1, unsub2, unsub3);
+}
+
+function renderSituation(d, containerId) {
+  const reqsHtml = (d.requirements || []).map(r =>
+    `<div class="req-item"><span class="req-bullet">▸</span><span>${r}</span></div>`
+  ).join('');
+  document.getElementById(containerId).innerHTML = `
+    <div class="situation-phase">Crisis ${d.phase || '—'}</div>
+    <div class="situation-title">${d.title || ''}</div>
+    <div class="situation-body">${(d.body || '').replace(/\n/g, '<br>')}</div>
+    ${reqsHtml ? `<div class="requirements-list"><div class="section-title" style="margin-top:14px; margin-bottom:8px;">Requirements</div>${reqsHtml}</div>` : ''}
+    <div class="text-sm text-dim" style="margin-top:12px;">Updated: ${fmtDateTime(d.updatedAt)}</div>
+  `;
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — ANNOUNCEMENTS
+// ════════════════════════════════════════════════
+function sendAnnouncement() {
+  const msg = document.getElementById('ctrl-ann-msg').value.trim();
+  const target = document.getElementById('ctrl-ann-target').value;
+  if (!msg) { toast('Please type a message.', 'error'); return; }
+
+  db.collection('feed').add({
+    type: 'announcement',
+    target,
+    body: msg,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById('ctrl-ann-msg').value = '';
+    toast('Announcement sent.', 'success');
+  }).catch(e => toast('Error: ' + e.message, 'error'));
+}
+
+function listenAnnouncements_Control() {
+  const unsub = db.collection('feed')
+    .where('type', '==', 'announcement')
+    .orderBy('timestamp', 'desc')
+    .limit(20)
+    .onSnapshot(snap => {
+      const el = document.getElementById('ctrl-ann-feed');
+      if (snap.empty) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet</div>';
+        return;
+      }
+      el.innerHTML = snap.docs.map(doc => {
+        const d = doc.data();
+        return `<div class="feed-item type-announcement">
+          <div class="feed-meta">
+            <span class="badge badge-blue">📢 Announcement</span>
+            <span class="badge badge-gray">${d.target === 'all' ? 'All Squadrons' : sqnLabel(d.target)}</span>
+            <span class="feed-time">${fmtTime(d.timestamp)}</span>
+          </div>
+          <div class="feed-body">${d.body.replace(/\n/g, '<br>')}</div>
+        </div>`;
+      }).join('');
+    });
+  app.listeners.push(unsub);
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — ATTENDANCE
+// ════════════════════════════════════════════════
+const SQN_IDS = Array.from({length: 12}, (_, i) => 'SQN' + String(i+1).padStart(2,'0'));
+
+function initAttendanceGrid() {
+  const grid = document.getElementById('ctrl-att-grid');
+  grid.innerHTML = SQN_IDS.map(id => `
+    <div class="sqn-card" onclick="document.getElementById('ctrl-att-detail-sqn').value='${id}'; loadAttendanceDetail();">
+      <div class="sqn-name">${sqnLabel(id)}</div>
+      <div class="sqn-count" id="att-count-${id}">0</div>
+      <div class="sqn-total" id="att-total-${id}">/ 0 members</div>
+      <div class="sqn-bar"><div class="sqn-bar-fill" id="att-bar-${id}" style="width:0%"></div></div>
+    </div>
+  `).join('');
+
+  // Listen to roster changes + attendance
+  listenAttendanceLive();
+}
+
+function listenAttendanceLive() {
+  // Listen to roster to get totals per sqn
+  const rUnsub = db.collection('roster').onSnapshot(snap => {
+    const totals = {};
+    SQN_IDS.forEach(id => totals[id] = 0);
+    snap.forEach(doc => {
+      const sqn = doc.data().squadronId;
+      if (totals[sqn] !== undefined) totals[sqn]++;
+    });
+    app.rosterTotals = totals;
+    updateAttGrid();
+  });
+
+  // Listen to attendance
+  const aUnsub = db.collection('attendance').onSnapshot(snap => {
+    const present = {};
+    SQN_IDS.forEach(id => present[id] = 0);
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.present) {
+        const sqn = d.squadronId;
+        if (present[sqn] !== undefined) present[sqn]++;
+      }
+    });
+    app.attendancePresent = present;
+    updateAttGrid();
+  });
+
+  app.listeners.push(rUnsub, aUnsub);
+}
+
+function updateAttGrid() {
+  const totals = app.rosterTotals || {};
+  const present = app.attendancePresent || {};
+  let grandTotal = 0, grandPresent = 0;
+  SQN_IDS.forEach(id => {
+    const t = totals[id] || 0;
+    const p = present[id] || 0;
+    grandTotal += t; grandPresent += p;
+    const pct = t > 0 ? Math.round((p/t)*100) : 0;
+    const countEl = document.getElementById(`att-count-${id}`);
+    const totalEl = document.getElementById(`att-total-${id}`);
+    const barEl = document.getElementById(`att-bar-${id}`);
+    if (countEl) countEl.textContent = p;
+    if (totalEl) totalEl.textContent = `/ ${t} members`;
+    if (barEl) barEl.style.width = pct + '%';
+  });
+  document.getElementById('ctrl-att-total').textContent = grandPresent;
+  document.getElementById('ctrl-att-grand-total').textContent = grandTotal;
+}
+
+function refreshAttendance() {
+  toast('Attendance refreshed.', 'info');
+}
+
+async function loadAttendanceDetail() {
+  const sqnId = document.getElementById('ctrl-att-detail-sqn').value;
+  const el = document.getElementById('ctrl-att-detail-list');
+  if (!sqnId) { el.innerHTML = ''; return; }
+
+  el.innerHTML = '<div class="text-dim text-sm p-8">Loading…</div>';
+  try {
+    const [rosterSnap, attSnap] = await Promise.all([
+      db.collection('roster').where('squadronId', '==', sqnId).orderBy('name').get(),
+      db.collection('attendance').where('squadronId', '==', sqnId).get()
+    ]);
+    const attMap = {};
+    attSnap.forEach(doc => attMap[doc.data().memberId] = doc.data());
+
+    if (rosterSnap.empty) {
+      el.innerHTML = '<div class="empty-state">No roster for this squadron</div>';
+      return;
+    }
+    el.innerHTML = rosterSnap.docs.map(doc => {
+      const m = doc.data();
+      const a = attMap[doc.id];
+      const present = a && a.present;
+      return `<div class="query-item" style="margin-bottom:8px;">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="bold">${m.rank} ${m.name}</span>
+            <span class="text-dim text-sm" style="margin-left:8px;">${m.service || ''}</span>
+          </div>
+          <span class="badge ${present ? 'badge-green' : 'badge-gray'}">${present ? '✓ Present' : 'Absent'}</span>
+        </div>
+        ${present ? `<div class="text-sm text-dim mt-4">Marked at ${fmtTime(a.markedAt)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="text-red text-sm">Error loading: ' + e.message + '</div>';
+  }
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — QUERIES
+// ════════════════════════════════════════════════
+function listenQueries_Control() {
+  const unsub = db.collection('queries')
+    .orderBy('timestamp', 'desc')
+    .onSnapshot(snap => {
+      const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+      const badge = document.getElementById('ctrl-query-badge');
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'inline-block' : 'none';
+      renderQueries(snap.docs);
+    });
+  app.listeners.push(unsub);
+}
+
+function filterQueries(f) {
+  app.queryFilter = f;
+  document.getElementById('qf-pending').classList.toggle('btn-primary', f === 'pending');
+  document.getElementById('qf-pending').classList.toggle('btn-secondary', f !== 'pending');
+  document.getElementById('qf-all').classList.toggle('btn-primary', f === 'all');
+  document.getElementById('qf-all').classList.toggle('btn-secondary', f !== 'all');
+}
+
+function renderQueries(docs) {
+  const el = document.getElementById('ctrl-queries-list');
+  const filtered = app.queryFilter === 'pending'
+    ? docs.filter(d => d.data().status === 'pending')
+    : docs;
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">❓</div>' +
+      (app.queryFilter === 'pending' ? 'No pending queries' : 'No queries yet') + '</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(doc => {
+    const d = doc.data();
+    const answered = d.status === 'answered';
+    return `<div class="query-item">
+      <div class="query-header">
+        <span class="badge badge-gold">${sqnLabel(d.squadronId)}</span>
+        <span class="badge badge-blue">${d.memberName || ''}</span>
+        <span class="badge ${answered ? 'badge-green' : 'badge-red'}">${answered ? '✓ Answered' : '⏳ Pending'}</span>
+        <span class="feed-time">${fmtDateTime(d.timestamp)}</span>
+      </div>
+      <div class="query-text">${d.question}</div>
+      ${answered
+        ? `<div class="query-response"><div class="query-response-label">Response from Control</div>${d.response}</div>`
+        : `<div class="flex gap-8">
+            <textarea id="qr-${doc.id}" class="input" rows="2" placeholder="Type your response…" style="flex:1;"></textarea>
+            <button class="btn btn-green btn-sm" style="align-self:flex-end;" onclick="respondToQuery('${doc.id}')">Reply</button>
+           </div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function respondToQuery(queryId) {
+  const response = document.getElementById(`qr-${queryId}`).value.trim();
+  if (!response) { toast('Please type a response.', 'error'); return; }
+  try {
+    await db.collection('queries').doc(queryId).update({
+      status: 'answered',
+      response,
+      respondedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Response sent.', 'success');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ════════════════════════════════════════════════
+// CONTROL — ROSTER
+// ════════════════════════════════════════════════
+let parsedRoster = [];
+
+function previewRoster() {
+  const file = document.getElementById('roster-file').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+    const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
+    const nameIdx = headers.indexOf('name');
+    const rankIdx = headers.indexOf('rank');
+    const serviceIdx = headers.indexOf('service');
+    const sqnIdx = headers.indexOf('squadron');
+    if (nameIdx === -1 || sqnIdx === -1) {
+      toast('CSV must have Name and Squadron columns.', 'error'); return;
+    }
+    parsedRoster = lines.slice(1).map(line => {
+      const cols = line.split(',').map(c => c.trim());
+      const sqnNum = parseInt(cols[sqnIdx]);
+      if (isNaN(sqnNum) || sqnNum < 1 || sqnNum > 12) return null;
+      return {
+        name: cols[nameIdx] || '',
+        rank: rankIdx >= 0 ? (cols[rankIdx] || '') : '',
+        service: serviceIdx >= 0 ? (cols[serviceIdx] || '') : '',
+        squadronId: 'SQN' + String(sqnNum).padStart(2, '0')
+      };
+    }).filter(Boolean);
+
+    document.getElementById('roster-preview-count').textContent =
+      `${parsedRoster.length} members parsed from CSV`;
+    document.getElementById('roster-preview').classList.remove('hidden');
+  };
+  reader.readAsText(file);
+}
+
+async function uploadRoster() {
+  if (!parsedRoster.length) { toast('No roster data to upload.', 'error'); return; }
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+  try {
+    // Batch writes (Firestore limit: 500 per batch)
+    const batchSize = 400;
+    for (let i = 0; i < parsedRoster.length; i += batchSize) {
+      const batch = db.batch();
+      parsedRoster.slice(i, i + batchSize).forEach(member => {
+        const ref = db.collection('roster').doc();
+        batch.set(ref, member);
+      });
+      await batch.commit();
+    }
+    toast(`${parsedRoster.length} members uploaded successfully.`, 'success');
+    loadRosterView();
+    parsedRoster = [];
+    document.getElementById('roster-preview').classList.add('hidden');
+    document.getElementById('roster-file').value = '';
+  } catch(e) {
+    toast('Upload failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '📤 Upload Roster';
+}
+
+async function loadRosterView() {
+  const sqnId = document.getElementById('roster-view-sqn')?.value || 'all';
+  const el = document.getElementById('roster-list');
+  if (!el) return;
+  el.innerHTML = '<div class="text-dim text-sm p-8">Loading…</div>';
+  try {
+    let query = db.collection('roster').orderBy('squadronId').orderBy('name');
+    if (sqnId !== 'all') query = db.collection('roster').where('squadronId', '==', sqnId).orderBy('name');
+    const snap = await query.get();
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div>No roster loaded</div>';
+      return;
+    }
+    el.innerHTML = `<table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead><tr style="border-bottom:1px solid var(--border); color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">
+        <th style="text-align:left; padding:6px 8px;">Name</th>
+        <th style="text-align:left; padding:6px 8px;">Rank</th>
+        <th style="text-align:left; padding:6px 8px;">Service</th>
+        <th style="text-align:left; padding:6px 8px;">Squadron</th>
+      </tr></thead>
+      <tbody>
+      ${snap.docs.map(doc => {
+        const d = doc.data();
+        return `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px;">${d.name}</td>
+          <td style="padding:8px; color:var(--text-dim);">${d.rank || '—'}</td>
+          <td style="padding:8px; color:var(--text-dim);">${d.service || '—'}</td>
+          <td style="padding:8px;"><span class="badge badge-blue">${sqnLabel(d.squadronId)}</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+  } catch(e) {
+    el.innerHTML = '<div class="text-red text-sm">Error: ' + e.message + '</div>';
+  }
+}
+
+// ════════════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════════════
+function openTimerModal() {
+  document.getElementById('timer-modal').style.display = 'flex';
+}
+function closeTimerModal() {
+  document.getElementById('timer-modal').style.display = 'none';
+}
+
+async function setTimer() {
+  const h = parseInt(document.getElementById('timer-hours').value) || 0;
+  const m = parseInt(document.getElementById('timer-mins').value) || 0;
+  if (h === 0 && m === 0) { toast('Please set a duration.', 'error'); return; }
+  const endTime = Date.now() + (h * 3600 + m * 60) * 1000;
+  try {
+    await db.collection('exercise').doc('timer').set({ endTime, active: true });
+    closeTimerModal();
+    toast(`Timer set for ${h}h ${m}m.`, 'success');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+async function clearTimer() {
+  await db.collection('exercise').doc('timer').set({ active: false, endTime: null });
+  toast('Timer stopped.', 'info');
+}
+
+function handleTimerSnap(snap) {
+  const clearBtn = document.getElementById('ctrl-timer-clear');
+  if (!snap.exists || !snap.data().active || !snap.data().endTime) {
+    document.getElementById('ctrl-timer').textContent = '—:——';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (app.timerInterval) { clearInterval(app.timerInterval); app.timerInterval = null; }
+    return;
+  }
+  if (clearBtn) clearBtn.style.display = '';
+  const endTime = snap.data().endTime;
+  if (app.timerInterval) clearInterval(app.timerInterval);
+  app.timerInterval = setInterval(() => tickTimer(endTime, 'ctrl-timer'), 1000);
+  tickTimer(endTime, 'ctrl-timer');
+}
+
+function tickTimer(endTime, elId) {
+  const remaining = Math.max(0, endTime - Date.now());
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (remaining === 0) {
+    el.textContent = '00:00';
+    el.classList.add('warning');
+    clearInterval(app.timerInterval);
+    return;
+  }
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  el.textContent = h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle('warning', remaining < 15 * 60000);
+}
+
+// ════════════════════════════════════════════════
+// SQUADRON — ENTER
+// ════════════════════════════════════════════════
+function enterSquadron() {
+  const u = app.user;
+  document.getElementById('sqn-topbar-sub').textContent = sqnLabel(u.squadronId);
+  document.getElementById('sqn-header-name').textContent = sqnLabel(u.squadronId);
+  document.getElementById('sqn-header-member').textContent = `${u.rank || ''} ${u.name} · ${u.service || ''}`;
+  document.getElementById('sqn-att-name').textContent = `${u.rank || ''} ${u.name}`;
+  showScreen('screen-squadron');
+  checkAttendanceStatus();
+  listenExercise_Squadron();
+  listenFeed_Squadron();
+  listenQueries_Squadron();
+}
+
+// ════════════════════════════════════════════════
+// SQUADRON — ATTENDANCE
+// ════════════════════════════════════════════════
+async function checkAttendanceStatus() {
+  const memberId = app.user.id;
+  const snap = await db.collection('attendance').where('memberId', '==', memberId).limit(1).get();
+  if (!snap.empty && snap.docs[0].data().present) {
+    setAttendanceMarked();
+  }
+}
+
+function setAttendanceMarked() {
+  document.getElementById('sqn-att-btn-area').innerHTML =
+    '<div class="att-status-present">✓ Marked Present</div>';
+  document.getElementById('sqn-att-status-display').innerHTML =
+    '<span class="badge badge-green">✓ Attendance Marked</span>';
+}
+
+async function markAttendance() {
+  const btn = document.getElementById('sqn-att-btn');
+  btn.disabled = true;
+  btn.textContent = 'Marking…';
+  try {
+    await db.collection('attendance').add({
+      memberId: app.user.id,
+      memberName: app.user.name,
+      squadronId: app.user.squadronId,
+      present: true,
+      markedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    setAttendanceMarked();
+    toast('Attendance marked. Welcome to Exercise AMRUT!', 'success');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '✓ Mark Present';
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ════════════════════════════════════════════════
+// SQUADRON — LIVE FEED
+// ════════════════════════════════════════════════
+function listenExercise_Squadron() {
+  const unsub1 = db.collection('exercise').doc('state').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+    const statusMap = {
+      active: ['Active', true], briefing: ['Briefing', true],
+      submission: ['Submission', true], break: ['Break', false], complete: ['Complete', false]
+    };
+    const [label, live] = statusMap[d.status] || ['Standby', false];
+    document.getElementById('sqn-status-text').textContent = label;
+    document.getElementById('sqn-status-dot').className = 'status-dot' + (live ? '' : ' inactive');
+    document.getElementById('sqn-phase-text').textContent = d.currentPhase ? 'Crisis ' + d.currentPhase : '—';
+  });
+
+  const unsub2 = db.collection('exercise').doc('timer').onSnapshot(snap => {
+    if (!snap.exists || !snap.data().active || !snap.data().endTime) {
+      document.getElementById('sqn-timer').textContent = '—:——';
+      if (app.timerInterval) { clearInterval(app.timerInterval); app.timerInterval = null; }
+      return;
+    }
+    const endTime = snap.data().endTime;
+    if (app.timerInterval) clearInterval(app.timerInterval);
+    app.timerInterval = setInterval(() => tickTimer(endTime, 'sqn-timer'), 1000);
+    tickTimer(endTime, 'sqn-timer');
+  });
+
+  app.listeners.push(unsub1, unsub2);
+}
+
+function listenFeed_Squadron() {
+  const sqnId = app.user.squadronId;
+  const unsub = db.collection('feed')
+    .orderBy('timestamp', 'desc')
+    .limit(50)
+    .onSnapshot(snap => {
+      const items = snap.docs.filter(doc => {
+        const d = doc.data();
+        return d.target === 'all' || d.target === sqnId;
+      });
+
+      const el = document.getElementById('sqn-feed');
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div>Awaiting updates from Control…</div>';
+        return;
+      }
+
+      el.innerHTML = items.map(doc => {
+        const d = doc.data();
+        if (d.type === 'situation') {
+          const reqsHtml = (d.requirements || []).map(r =>
+            `<div class="req-item"><span class="req-bullet">▸</span><span>${r}</span></div>`
+          ).join('');
+          return `<div class="feed-item type-situation">
+            <div class="feed-meta">
+              <span class="badge badge-gold">Crisis ${d.phase}</span>
+              <span class="badge badge-red">NEW SITUATION</span>
+              <span class="feed-time">${fmtTime(d.timestamp)}</span>
+            </div>
+            <div class="bold" style="margin-bottom:6px; font-size:14px;">${d.title}</div>
+            <div class="feed-body">${(d.body || '').replace(/\n/g, '<br>')}</div>
+            ${reqsHtml ? `<div class="requirements-list" style="margin-top:10px;">${reqsHtml}</div>` : ''}
+          </div>`;
+        } else {
+          return `<div class="feed-item type-announcement">
+            <div class="feed-meta">
+              <span class="badge badge-blue">📢 Announcement</span>
+              <span class="feed-time">${fmtTime(d.timestamp)}</span>
+            </div>
+            <div class="feed-body">${d.body.replace(/\n/g, '<br>')}</div>
+          </div>`;
+        }
+      }).join('');
+    });
+  app.listeners.push(unsub);
+}
+
+// ════════════════════════════════════════════════
+// SQUADRON — QUERIES
+// ════════════════════════════════════════════════
+async function submitQuery() {
+  const text = document.getElementById('sqn-query-text').value.trim();
+  if (!text) { toast('Please type your question.', 'error'); return; }
+  try {
+    await db.collection('queries').add({
+      squadronId: app.user.squadronId,
+      memberId: app.user.id,
+      memberName: `${app.user.rank || ''} ${app.user.name}`.trim(),
+      question: text,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'pending'
+    });
+    document.getElementById('sqn-query-text').value = '';
+    toast('Your query has been sent to Control.', 'success');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+function listenQueries_Squadron() {
+  const sqnId = app.user.squadronId;
+  const unsub = db.collection('queries')
+    .where('squadronId', '==', sqnId)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot(snap => {
+      const el = document.getElementById('sqn-my-queries');
+      if (snap.empty) {
+        el.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="empty-icon" style="font-size:28px;">❓</div>No queries sent yet</div>';
+        return;
+      }
+      el.innerHTML = snap.docs.map(doc => {
+        const d = doc.data();
+        const answered = d.status === 'answered';
+        return `<div class="query-item">
+          <div class="query-header">
+            <span class="badge ${answered ? 'badge-green' : 'badge-red'}">${answered ? '✓ Answered' : '⏳ Pending'}</span>
+            <span class="feed-time">${fmtDateTime(d.timestamp)}</span>
+          </div>
+          <div class="query-text">${d.question}</div>
+          ${answered ? `<div class="query-response"><div class="query-response-label">Response from Control</div>${d.response}</div>` : ''}
+        </div>`;
+      }).join('');
+
+      // Notify if a new answer comes in
+      const justAnswered = snap.docChanges().filter(c =>
+        c.type === 'modified' && c.doc.data().status === 'answered'
+      );
+      if (justAnswered.length > 0) {
+        toast('Control has responded to your query!', 'success');
+      }
+    });
+  app.listeners.push(unsub);
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+// Check if Firebase is configured
+window.addEventListener('load', () => {
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    document.querySelector('.login-subtitle').textContent =
+      '⚠ Firebase not configured — see setup guide';
+    document.getElementById('login-btn').disabled = true;
+    document.getElementById('login-error').textContent =
+      'Open amrut-app.html and fill in your Firebase config at the top of the script section.';
+    document.getElementById('login-error').classList.remove('hidden');
+  }
+});
+
+// Init attendance grid cards for control
+document.addEventListener('DOMContentLoaded', () => {
+  initAttendanceGrid();
+});
+
+</script>
+</body>
+</html>
